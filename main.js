@@ -3,14 +3,21 @@ var app = express();
 var fs = require('fs');
 var bodyParser = require('body-parser');
 var compression = require('compression');
-var indexRouter = require('./routes/index');
-var topicRouter = require('./routes/topic');
 var helmet = require('helmet');
-app.use(helmet()); 
+app.use(helmet());
+var session = require('express-session')
+var FileStore = require('session-file-store')(session)
 
 app.use(express.static('public'));		// 정적인 파일 서비스? 파일 직접 불러오기
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(compression());
+app.use(session({
+  secret: 'asadlfkj!@#!@#dfgasdg',
+  resave: false,
+  saveUninitialized: true,
+  store:new FileStore()
+}))
+
 app.get('*', function (request, response, next) {
 	fs.readdir('./data', function(error, filelist){
 		request.list = filelist;
@@ -18,8 +25,13 @@ app.get('*', function (request, response, next) {
 	});
 });
 
+var indexRouter = require('./routes/index');
+var topicRouter = require('./routes/topic');
+var authRouter = require('./routes/auth');
+
 app.use('/', indexRouter);
 app.use('/topic', topicRouter);
+app.use('/auth', authRouter);
 
 // 불러올 파일이 없을때
 app.use(function(request, response, next) {
